@@ -111,7 +111,8 @@
 
             // Activate the default panel
             if (self.options.defaultPanel !== false) {
-                self.open($('.' + self.options.panelControlClass, self.element).eq(self.options.defaultPanel));
+                var applyEffect = false;
+                self.open($('.' + self.options.panelControlClass, self.element).eq(self.options.defaultPanel), applyEffect);
             }
 
             // Add the active class
@@ -264,14 +265,15 @@
     /*
         Public method for toggling the panel
     */
+        var applyEffect = true;
         if (control.attr('aria-pressed') === 'false') {
-            this.open(control);
+            this.open(control, applyEffect);
         } else {
             this.close(control);
         }
     };
 
-    AccAccordion.prototype.open = function(control) {
+    AccAccordion.prototype.open = function(control, applyEffect) {
     /*
         Public method for opening the panel
     */
@@ -287,7 +289,7 @@
                     'aria-pressed': 'false'
                 })
                 .removeClass(activePanelClass);
-            if ( !this.options.slideUp ){
+            if ( !applyEffect || !this.options.slideUp ){
                 $('> [aria-hidden="false"]', this.element)
                     .attr('aria-hidden', 'true')
                     .hide();
@@ -299,7 +301,7 @@
         }
 
         // Update state of newly selected panel
-        if ( !this.options.slideDown ){
+        if ( !applyEffect || !this.options.slideDown ){
             $(panelId, this.element)
                 .attr('aria-hidden', 'false')
                 .show();
