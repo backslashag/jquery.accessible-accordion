@@ -2,10 +2,12 @@
  * jQuery Accessible Accordion
  *
  * @description: Creates an accessible accordion - collapsible content panels
- * @source: https://github.com/nomensa/jquery.accessible-accordion.git
- * @version: '0.1.0'
+ * @source: https://github.com/jenzener/jquery.accessible-accordion.git
+ * @originalsource: https://github.com/nomensa/jquery.accessible-accordion.git
+ * @version: '1.0.0'
  *
- * @author: Nomensa
+ * @author: Mischa Sameli
+ * @originalauthor: Nomensa
  * @license: licenced under MIT - http://opensource.org/licenses/mit-license.php
 */
 
@@ -47,7 +49,20 @@
         // Class applied to panel titles. Only used when the activeControlHidden & horizontal options are true
         panelTitleClass: 'js-accordion_panel-title',
         // The width of the panel in % for horizontal accordion
-        panelWidth: 33
+        panelWidth: 33,
+        // To scroll the viewport onto the active panel
+        scrollToPanel: false,
+        // Relies on 'scrollToPanel' to be true
+        // The animation speed for the 'scrollToPanel' option
+        scrollToPanelSpeed: 200,
+        // fadeIn option acticated
+        fadeIn : false,
+        // fadeIn options
+        fadeInOptions : {},
+        // toggle option acticated
+        fadeOut : false,
+        // fadeToggle options
+        fadeOutOptions : {}
     };
 
     function AccAccordion(element, options) {
@@ -127,7 +142,7 @@
         */
             self.handleClick = function(event) {
                 event.preventDefault();
-
+                
                 self.toggle($(this));
             };
             return self.handleClick;
@@ -261,7 +276,8 @@
         Public method for opening the panel
     */
         var activePanelClass = this.options.panelControlActiveClass,
-            panelId = '#' + $(control).attr('aria-controls');
+            panelId = '#' + $(control).attr('aria-controls'),
+            url = window.location.href;
 
         // Reset state if another panel is open
         if ($('> [aria-pressed="true"]', this.element).length !== 0) {
@@ -271,16 +287,27 @@
                     'aria-pressed': 'false'
                 })
                 .removeClass(activePanelClass);
-
-            $('> [aria-hidden="false"]', this.element)
-                .attr('aria-hidden', 'true')
-                .hide();
+            if ( !this.options.fadeOut ){
+                $('> [aria-hidden="false"]', this.element)
+                    .attr('aria-hidden', 'true')
+                    .hide();
+            } else {
+                $('> [aria-hidden="false"]', this.element)
+                    .attr('aria-hidden', 'true')
+                    .fadeOut(this.options.fadeOutOptions);
+            }
         }
 
         // Update state of newly selected panel
-        $(panelId, this.element)
-            .attr('aria-hidden', 'false')
-            .show();
+        if ( !this.options.fadeIn ){
+            $(panelId, this.element)
+                .attr('aria-hidden', 'false')
+                .show();
+        } else {
+           $(panelId, this.element)
+                .attr('aria-hidden', 'false')
+                .fadeIn(this.options.fadeInOptions); 
+        }
 
         // Update state of newly selected panel control
         $(control, this.element)
@@ -289,6 +316,20 @@
                 'aria-expanded': 'true',
                 'aria-pressed': 'true'
             });
+        // Scroll to panel
+        if (this.options.scrollToPanel) {
+            // Clean url
+            url = url.substr(0, url.lastIndexOf('#'));
+
+            // Animate scroll
+            $('html, body').animate({
+                scrollTop: $(panelId, this.element).offset().top
+            }, this.options.scrollToPanelSpeed);
+
+            // Add panel ID to url
+            window.location.href = url + panelId;
+        }
+
 
         // Horizontal accordion specific updates
         if (this.options.horizontal === true) {
@@ -322,9 +363,15 @@
             panelId = '#' + $(control).attr('aria-controls');
 
         // Update state of newly selected panel
-        $(panelId, this.element)
-            .attr('aria-hidden', 'true')
-            .hide();
+        if ( !this.options.fadeOut ){
+            $(panelId, this.element)
+                .attr('aria-hidden', 'true')
+                .hide();
+        } else {
+            $(panelId, this.element)
+                .attr('aria-hidden', 'true')
+                .fadeOut(this.options.fadeOutOptions);
+        }
 
         // Update state of newly selected panel control
         $(control, this.element)
@@ -339,7 +386,8 @@
     /*
         Public method for return the DOM back to its initial state
     */
-        var self = this;
+        var self = this, 
+            url = window.location.href;
 
         this.element
             .removeAttr('style')
@@ -369,6 +417,19 @@
         $(this.element).find('.' + this.options.panelTitleClass).remove();
 
         this.options.callbackDestroy();
+        
+        
+        // Scroll to panel
+        if (this.options.scrollToPanel) {
+            url = url.substr(0, url.lastIndexOf('#'));
+
+            // If the panel has been scrolled to
+            if (url.length !== 0) {
+                // Remove the ID from the url
+                window.location.href = url + '#';
+            }
+        }
+        
     };
 
 
