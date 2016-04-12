@@ -56,13 +56,13 @@
         // The animation speed for the 'scrollToPanel' option
         scrollToPanelSpeed: 200,
         // fadeIn option acticated
-        fadeIn : false,
+        slideDown : false,
         // fadeIn options
-        fadeInOptions : {},
+        slideDownOptions : {},
         // toggle option acticated
-        fadeOut : false,
+        slideUp : false,
         // fadeToggle options
-        fadeOutOptions : {}
+        slideUpOptions : {}
     };
 
     function AccAccordion(element, options) {
@@ -287,26 +287,26 @@
                     'aria-pressed': 'false'
                 })
                 .removeClass(activePanelClass);
-            if ( !this.options.fadeOut ){
+            if ( !this.options.slideUp ){
                 $('> [aria-hidden="false"]', this.element)
                     .attr('aria-hidden', 'true')
                     .hide();
             } else {
                 $('> [aria-hidden="false"]', this.element)
                     .attr('aria-hidden', 'true')
-                    .fadeOut(this.options.fadeOutOptions);
+                    .slideUp(this.options.slideUpOptions);
             }
         }
 
         // Update state of newly selected panel
-        if ( !this.options.fadeIn ){
+        if ( !this.options.slideDown ){
             $(panelId, this.element)
                 .attr('aria-hidden', 'false')
                 .show();
         } else {
            $(panelId, this.element)
                 .attr('aria-hidden', 'false')
-                .fadeIn(this.options.fadeInOptions); 
+                .slideDown(this.options.slideDownOptions); 
         }
 
         // Update state of newly selected panel control
@@ -363,14 +363,14 @@
             panelId = '#' + $(control).attr('aria-controls');
 
         // Update state of newly selected panel
-        if ( !this.options.fadeOut ){
+        if ( !this.options.slideUp ){
             $(panelId, this.element)
                 .attr('aria-hidden', 'true')
                 .hide();
         } else {
             $(panelId, this.element)
                 .attr('aria-hidden', 'true')
-                .fadeOut(this.options.fadeOutOptions);
+                .slideUp(this.options.slideUpOptions);
         }
 
         // Update state of newly selected panel control
