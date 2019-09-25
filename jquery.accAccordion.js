@@ -4,12 +4,12 @@
  * @description: Creates an accessible accordion - collapsible content panels
  * @source: https://github.com/jenzener/jquery.accessible-accordion.git
  * @originalsource: https://github.com/nomensa/jquery.accessible-accordion.git
- * @version: '1.0.0'
+ * @version: '1.0.1'
  *
  * @author: Mischa Sameli
  * @originalauthor: Nomensa
  * @license: licenced under MIT - http://opensource.org/licenses/mit-license.php
-*/
+ */
 
 (function ($, window, document, undefined) {
     'use strict';
@@ -66,9 +66,9 @@
     };
 
     function AccAccordion(element, options) {
-    /*
-    Constructor function for the nav pattern plugin
-    */
+        /*
+         Constructor function for the nav pattern plugin
+         */
         var self = this;
 
         self.element = $(element);
@@ -78,9 +78,9 @@
         self.section = self.element.find('.' + self.options.sectionClass);
 
         function init() {
-        /*
-            Our init function to create an instance of the plugin
-        */
+            /*
+             Our init function to create an instance of the plugin
+             */
             // Add classes and attributes to panel and controls
             $('> div', self.element).each(function(index, value) {
                 // Panel
@@ -138,21 +138,21 @@
         }
 
         function createHandleClick() {
-        /*
-            Create the click event handle
-        */
+            /*
+             Create the click event handle
+             */
             self.handleClick = function(event) {
                 event.preventDefault();
-                
+
                 self.toggle($(this));
             };
             return self.handleClick;
         }
 
         function createHandleKeyDown() {
-        /*
-            Create the keydown event handle
-        */
+            /*
+             Create the keydown event handle
+             */
             self.handleKeyDown = function(event) {
                 switch (event.which) {
                     // arrow left or up
@@ -192,9 +192,9 @@
         }
 
         function addHeadingsToPanels() {
-        /*
-            Add headings to all panels (the headings will be the same as the relevant tab text )
-        */
+            /*
+             Add headings to all panels (the headings will be the same as the relevant tab text )
+             */
             var headingText;
 
             self.element.find('.' + self.options.panelClass).each(function() {
@@ -206,10 +206,10 @@
 
         if (self.options.horizontal === true) {
             $(window).on('debouncedresize', function() {
-            /*
-                Recalculate the horizontal accordion width and heights when window is resized
-                @req: https://github.com/louisremi/jquery-smartresize
-            */
+                /*
+                 Recalculate the horizontal accordion width and heights when window is resized
+                 @req: https://github.com/louisremi/jquery-smartresize
+                 */
                 self.calculateWidths();
                 self.calculateHeights();
             });
@@ -219,9 +219,9 @@
     }
 
     AccAccordion.prototype.calculateWidths = function() {
-    /*
-        Public method for calculating widths for panels and controls
-    */
+        /*
+         Public method for calculating widths for panels and controls
+         */
         var controls = this.element.find('.' + this.options.panelControlClass),
             countControls,
             controlsWidths = 100 / countControls,
@@ -245,9 +245,9 @@
     };
 
     AccAccordion.prototype.calculateHeights = function() {
-    /*
-        Public method for calculating equal heights for panels and controls
-    */
+        /*
+         Public method for calculating equal heights for panels and controls
+         */
         var controls = this.element.find('.' + this.options.panelControlClass),
             minHeight,
             openPanel;
@@ -262,9 +262,9 @@
     };
 
     AccAccordion.prototype.toggle = function(control) {
-    /*
-        Public method for toggling the panel
-    */
+        /*
+         Public method for toggling the panel
+         */
         var applyEffect = true;
         if (control.attr('aria-pressed') === 'false') {
             this.open(control, applyEffect);
@@ -274,12 +274,13 @@
     };
 
     AccAccordion.prototype.open = function(control, applyEffect) {
-    /*
-        Public method for opening the panel
-    */
+        /*
+         Public method for opening the panel
+         */
         var activePanelClass = this.options.panelControlActiveClass,
             panelId = '#' + $(control).attr('aria-controls'),
-            url = window.location.href;
+            url = window.location.href,
+            promises = [];
 
         // Reset state if another panel is open
         if ($('> [aria-pressed="true"]', this.element).length !== 0) {
@@ -294,9 +295,9 @@
                     .attr('aria-hidden', 'true')
                     .hide();
             } else {
-                $('> [aria-hidden="false"]', this.element)
+                promises.push($('> [aria-hidden="false"]', this.element)
                     .attr('aria-hidden', 'true')
-                    .slideUp(this.options.slideUpOptions);
+                    .slideUp(this.options.slideUpOptions).promise());
             }
         }
 
@@ -306,9 +307,9 @@
                 .attr('aria-hidden', 'false')
                 .show();
         } else {
-           $(panelId, this.element)
+            promises.push($(panelId, this.element)
                 .attr('aria-hidden', 'false')
-                .slideDown(this.options.slideDownOptions); 
+                .slideDown(this.options.slideDownOptions).promise());
         }
 
         // Update state of newly selected panel control
@@ -320,18 +321,29 @@
             });
         // Scroll to panel
         if (this.options.scrollToPanel) {
-            // Clean url
-            url = url.substr(0, url.lastIndexOf('#'));
+            var self = this;
+            var scrollFn = function () {
+                // Clean url
+                url = url.substr(0, url.lastIndexOf('#'));
 
-            // Animate scroll
-            $('html, body').animate({
-                scrollTop: $(panelId, this.element).offset().top
-            }, this.options.scrollToPanelSpeed);
+                // Animate scroll
+                $('html, body').animate({
+                    scrollTop: $(panelId, self.element).offset().top
+                }, self.options.scrollToPanelSpeed);
 
-            // Add panel ID to url
-            window.location.href = url + panelId;
+                if (location.hash != panelId) {
+                    // Add panel ID to url
+                    window.location.href = url + panelId;
+                }
+            };
+            if (promises.length) {
+                $.when.apply($, promises).then(function(results) {
+                    scrollFn();
+                });
+            } else {
+                scrollFn();
+            }
         }
-
 
         // Horizontal accordion specific updates
         if (this.options.horizontal === true) {
@@ -352,9 +364,9 @@
     };
 
     AccAccordion.prototype.close = function(control) {
-    /*
-        Public method for closing the panel
-    */
+        /*
+         Public method for closing the panel
+         */
 
         // Do not close when using activeControlHidden
         if (this.options.activeControlHidden) {
@@ -385,10 +397,10 @@
     };
 
     AccAccordion.prototype.destroy = function () {
-    /*
-        Public method for return the DOM back to its initial state
-    */
-        var self = this, 
+        /*
+         Public method for return the DOM back to its initial state
+         */
+        var self = this,
             url = window.location.href;
 
         this.element
@@ -419,8 +431,8 @@
         $(this.element).find('.' + this.options.panelTitleClass).remove();
 
         this.options.callbackDestroy();
-        
-        
+
+
         // Scroll to panel
         if (this.options.scrollToPanel) {
             url = url.substr(0, url.lastIndexOf('#'));
@@ -431,14 +443,14 @@
                 window.location.href = url + '#';
             }
         }
-        
+
     };
 
 
     $.fn[pluginName] = function (options) {
-    /*
-        Initialise an instance of the plugin on each selected element. Guard against duplicate instantiations.
-    */
+        /*
+         Initialise an instance of the plugin on each selected element. Guard against duplicate instantiations.
+         */
         return this.each(function () {
             if (!$.data(this, 'plugin_' + pluginName)) {
                 $.data(this, 'plugin_' + pluginName, new AccAccordion(this, options));
