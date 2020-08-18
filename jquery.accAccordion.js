@@ -4,7 +4,7 @@
  * @description: Creates an accessible accordion - collapsible content panels
  * @source: https://github.com/jenzener/jquery.accessible-accordion.git
  * @originalsource: https://github.com/nomensa/jquery.accessible-accordion.git
- * @version: '1.0.2'
+ * @version: '1.0.3'
  *
  * @author: Volodymyr Kmet | Mischa Sameli
  * @originalauthor: Nomensa
