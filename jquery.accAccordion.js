@@ -123,7 +123,7 @@
              Our init function to create an instance of the plugin
              */
             // Add classes and attributes to panel and controls
-            $('> div', self.element).each(function(index, value) {
+            $('> div.'+options.accordeon_container_class, self.element).each(function(index, value) {
                 // Panel
                 $(value)
                     .addClass(self.options.panelClass)
