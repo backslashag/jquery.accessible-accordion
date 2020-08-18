@@ -4,9 +4,9 @@
  * @description: Creates an accessible accordion - collapsible content panels
  * @source: https://github.com/jenzener/jquery.accessible-accordion.git
  * @originalsource: https://github.com/nomensa/jquery.accessible-accordion.git
- * @version: '1.0.1'
+ * @version: '1.0.3'
  *
- * @author: Mischa Sameli
+ * @author: Volodymyr Kmet | Mischa Sameli
  * @originalauthor: Nomensa
  * @license: licenced under MIT - http://opensource.org/licenses/mit-license.php
  */
@@ -52,37 +52,78 @@
         panelWidth: 33,
         // To scroll the viewport onto the active panel
         scrollToPanel: false,
+        // To scroll the viewport to the body of active panel
+        scrollToAnchor: false,
         // Relies on 'scrollToPanel' to be true
         // The animation speed for the 'scrollToPanel' option
         scrollToPanelSpeed: 200,
-        // fadeIn option acticated
+        // fadeIn option activated
         slideDown : false,
         // fadeIn options
         slideDownOptions : {},
-        // toggle option acticated
+        // toggle option activated
         slideUp : false,
         // fadeToggle options
-        slideUpOptions : {}
+        slideUpOptions : {},
+        // state indicators elements
+        stateIndicators: {
+            elements: {
+                className: 'js-accordion-state-indicator',
+                open: '',
+                close: '',
+                position: 'after'
+            }
+        }
     };
+
+    function addStateIndicator(options, element, state) {
+        var conf = options.stateIndicators,
+            stateElement;
+
+        if (conf.enabled) {
+            stateElement = $(conf.elements[state]).clone();
+
+            element.find('.'+conf.elements.className).remove();
+
+            switch(conf.elements.position) {
+                case 'after': {
+                    element.append(stateElement);
+                    break;
+                }
+                case 'before': {
+                    element.prepend(stateElement);
+                    break;
+                }
+            }
+        }
+    }
 
     function AccAccordion(element, options) {
         /*
          Constructor function for the nav pattern plugin
          */
-        var self = this;
+        var self = this,
+            stateElements = {};
 
         self.element = $(element);
         // Combine user options with default options
+        options.stateIndicators = options.stateIndicators || {};
+        options.stateIndicators.elements  = $.extend(defaults.stateIndicators.elements, options.stateIndicators.elements || {});
         self.options = $.extend({}, defaults, options);
+        stateElements = self.options.stateIndicators.elements;
 
-        self.section = self.element.find('.' + self.options.sectionClass);
+        self.options.stateIndicators.enabled = !!(stateElements.open && stateElements.close);
+        if (self.options.stateIndicators.enabled) {
+            stateElements.open = $(stateElements.open).addClass(stateElements.className + ' ' + stateElements.className+'--open');
+            stateElements.close = $(stateElements.close).addClass(stateElements.className + ' ' + stateElements.className+'--close');
+        }
 
         function init() {
             /*
              Our init function to create an instance of the plugin
              */
             // Add classes and attributes to panel and controls
-            $('> div', self.element).each(function(index, value) {
+            $('> div.'+options.accordeon_container_class, self.element).each(function(index, value) {
                 // Panel
                 $(value)
                     .addClass(self.options.panelClass)
@@ -107,6 +148,9 @@
                     .click(createHandleClick(self))
                     .keydown(createHandleKeyDown(self))
                     .wrapInner('<span />');
+
+                //add state indicators
+                addStateIndicator(self.options, $(value).prev(), 'open');
             });
 
             // Activate the default panel
@@ -224,7 +268,7 @@
          */
         var controls = this.element.find('.' + this.options.panelControlClass),
             countControls,
-            controlsWidths = 100 / countControls,
+            controlsWidths,
             panels = this.element.find('.' + this.options.panelClass),
             panelWidths = this.options.panelWidth;
 
@@ -261,6 +305,23 @@
         controls.css('min-height', minHeight);
     };
 
+    AccAccordion.prototype.setLocationHash = function(hash) {
+        if (location.hash != hash) {
+            // Clean url
+            var url = window.location.href;
+            url = url.substr(0, url.lastIndexOf('#'));
+            // Add panel ID to url
+            window.location.href = url + hash;
+        }
+    };
+
+    AccAccordion.prototype.scrollTo = function(element, speed) {
+
+        $('html, body').animate({
+            scrollTop: element.offset().top
+        }, speed || this.options.scrollToPanelSpeed);
+    };
+
     AccAccordion.prototype.toggle = function(control) {
         /*
          Public method for toggling the panel
@@ -277,13 +338,18 @@
         /*
          Public method for opening the panel
          */
-        var activePanelClass = this.options.panelControlActiveClass,
+        var self = this,
+            activePanelClass = this.options.panelControlActiveClass,
             panelId = '#' + $(control).attr('aria-controls'),
-            url = window.location.href,
             promises = [];
 
         // Reset state if another panel is open
         if ($('> [aria-pressed="true"]', this.element).length !== 0) {
+            // revert state indicator
+            $('> [aria-pressed="true"]', this.element).each(function() {
+                addStateIndicator(self.options, $(this), 'open');
+            });
+
             $('> [aria-pressed="true"]', this.element)
                 .attr({
                     'aria-expanded': 'false',
@@ -319,31 +385,6 @@
                 'aria-expanded': 'true',
                 'aria-pressed': 'true'
             });
-        // Scroll to panel
-        if (this.options.scrollToPanel) {
-            var self = this;
-            var scrollFn = function () {
-                // Clean url
-                url = url.substr(0, url.lastIndexOf('#'));
-
-                // Animate scroll
-                $('html, body').animate({
-                    scrollTop: $(panelId, self.element).offset().top
-                }, self.options.scrollToPanelSpeed);
-
-                if (location.hash != panelId) {
-                    // Add panel ID to url
-                    window.location.href = url + panelId;
-                }
-            };
-            if (promises.length) {
-                $.when.apply($, promises).then(function(results) {
-                    scrollFn();
-                });
-            } else {
-                scrollFn();
-            }
-        }
 
         // Horizontal accordion specific updates
         if (this.options.horizontal === true) {
@@ -360,6 +401,18 @@
 
             this.calculateWidths();
             this.calculateHeights();
+        }
+
+        // adds state indicator
+        addStateIndicator(this.options, $(control), 'close');
+
+        // Trigger opened event
+        if (promises.length) {
+            $.when.apply($, promises).then(function() {
+                $(control, self.element).trigger('opened', [self, panelId]);
+            });
+        } else {
+            $(control, self.element).trigger('opened', [self, panelId]);
         }
     };
 
@@ -394,14 +447,19 @@
                 'aria-pressed': 'false'
             })
             .removeClass(activePanelClass);
+
+        // adds state indicator
+        addStateIndicator(this.options, $(control), 'open');
+
+        //trigger event
+        $(control, this.element).trigger('closed', [this]);
     };
 
     AccAccordion.prototype.destroy = function () {
         /*
          Public method for return the DOM back to its initial state
          */
-        var self = this,
-            url = window.location.href;
+        var self = this;
 
         this.element
             .removeAttr('style')
@@ -432,16 +490,9 @@
 
         this.options.callbackDestroy();
 
-
         // Scroll to panel
         if (this.options.scrollToPanel) {
-            url = url.substr(0, url.lastIndexOf('#'));
-
-            // If the panel has been scrolled to
-            if (url.length !== 0) {
-                // Remove the ID from the url
-                window.location.href = url + '#';
-            }
+            this.setLocationHash('#');
         }
 
     };
